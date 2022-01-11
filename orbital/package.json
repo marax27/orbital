@@ -8,6 +8,10 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@types/three": "^0.136.1",
+    "@vue/reactivity": "^3.2.26",
+    "three": "^0.136.0",
+    "tslib": "^2.3.1",
     "vue": "^3.0.0",
     "vue-class-component": "^8.0.0-0"
   },
