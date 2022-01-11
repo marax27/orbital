@@ -3,11 +3,11 @@
 </template>
 
 <script lang="ts">
-import { Vue } from 'vue-class-component';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { toRaw } from '@vue/reactivity';
 import Globe from '../visualisation/globe';
+import GeoJsonMixin from '../visualisation/geoJson.mixin';
 
 interface ViewPortState {
   width: number;
@@ -18,14 +18,15 @@ interface ViewPortState {
   renderer: THREE.Renderer;
 }
 
-export default class ViewPort extends Vue {
-  state: ViewPortState | null = null;
+export default class ViewPort extends GeoJsonMixin {
+  // state: ViewPortState | null = null;  // this is a reactive version that's messing with rendering framerate.
+  state!: ViewPortState;
 
   mounted(): void {
     this.initialiseViewPort();
     this.$nextTick(() => {
       this.animate();
-      this.initialiseGlobe();
+      return this.initialiseGlobe();
     });
   }
 
@@ -41,7 +42,7 @@ export default class ViewPort extends Vue {
     window.requestAnimationFrame(this.animate);
   }
 
-  private initialiseGlobe(): void {
+  private async initialiseGlobe(): Promise<void> {
     if (this.state == null) {
       console.error('Failed to initialise globe: Viewport state not initialised.');
       return;
@@ -51,6 +52,8 @@ export default class ViewPort extends Vue {
     globe.addGrid(20);
     const globeObject = globe.get3dObject();
     this.state.scene.add(toRaw(globeObject));
+
+    await this.populateWithGeoJsonData(10, 'sphere', globeObject);
   }
 
   private initialiseViewPort(): void {
@@ -68,14 +71,14 @@ export default class ViewPort extends Vue {
 
     const controls = new OrbitControls(camera, renderer.domElement);
 
-    this.state = {
+    this.state = toRaw({
       width,
       height,
       camera,
       controls,
       scene,
       renderer,
-    };
+    });
   }
 }
 </script>
