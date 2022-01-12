@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { toRaw } from '@vue/reactivity';
+import Stats from 'three/examples/jsm/libs/stats.module';
 import Globe from '../visualisation/globe';
 import GeoJsonMixin from '../visualisation/geoJson.mixin';
 
@@ -25,22 +26,24 @@ export default class OrbitalViewPort extends GeoJsonMixin {
 
   globeObject!: THREE.Object3D;
 
+  stats!: Stats;
+
   mounted(): void {
     this.initialiseViewPort();
+    this.stats = Stats();
+    this.$el.appendChild(this.stats.dom);
     this.animate();
     this.globeObject = this.initialiseGlobe();
     this.populateWithGeoJsonData(10, 'sphere', this.globeObject);
   }
 
   private animate(): void {
+    this.stats.begin();
     const S = this.state;
-    if (S == null) {
-      console.error('Viewport state not initialised.');
-      return;
-    }
-
     S.controls.update();
     S.renderer.render(toRaw(S.scene), S.camera);
+    this.stats.end();
+
     window.requestAnimationFrame(this.animate);
   }
 
