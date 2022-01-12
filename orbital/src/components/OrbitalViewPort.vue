@@ -91,6 +91,7 @@ export default class OrbitalViewPort extends GeoJsonMixin {
     camera.position.z = -20;
 
     const controls = new OrbitControls(camera, renderer.domElement);
+    controls.minDistance = 10.5;
 
     const raycaster = new THREE.Raycaster();
 
