@@ -22,3 +22,10 @@ npm run lint
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
+
+
+## Credits
+
+GeoJSON data: [Natural Earth](https://www.naturalearthdata.com/)
+
+GeoJSON processing: based on https://github.com/jdomingu/ThreeGeoJSON
