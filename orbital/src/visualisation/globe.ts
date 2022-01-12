@@ -80,6 +80,13 @@ export default class Globe {
     return this.planet;
   }
 
+  public getSurfaceMesh(): THREE.Mesh {
+    if (this.surfaceMesh != null) {
+      return this.surfaceMesh;
+    }
+    throw new Error('Surface mesh not initialised.');
+  }
+
   public addGrid(greatCircleCount: number): void {
     const globe = this.get3dObject();
     const linspace = [...Array(greatCircleCount).keys()];
@@ -120,5 +127,9 @@ export default class Globe {
         const circleOfLatitude = new THREE.Line(latGeom, lineMaterial);
         globe.add(circleOfLatitude);
       });
+  }
+
+  public getSphericalCoordinates(surfacePoint: ICartesianCoordinates): ISphericalCoordinates {
+    return CoordinateConversion.toSpherical(surfacePoint, this.radius);
   }
 }

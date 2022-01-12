@@ -17,6 +17,11 @@ interface ViewPortState {
   controls: OrbitControls;
   scene: THREE.Scene;
   renderer: THREE.Renderer;
+  raycaster: THREE.Raycaster;
+}
+
+interface IMouseState {
+  position: THREE.Vector2;
 }
 
 export default class OrbitalViewPort extends GeoJsonMixin {
@@ -24,9 +29,17 @@ export default class OrbitalViewPort extends GeoJsonMixin {
   // state: ViewPortState | null = null;
   state!: ViewPortState;
 
+  mouseState!: IMouseState;
+
+  globe!: Globe;
+
   globeObject!: THREE.Object3D;
 
   stats!: Stats;
+
+  created() {
+    this.mouseState = { position: new THREE.Vector2(0, 0) };
+  }
 
   mounted(): void {
     this.initialiseViewPort();
@@ -52,9 +65,9 @@ export default class OrbitalViewPort extends GeoJsonMixin {
       throw new Error('Failed to initialise globe: Viewport state not initialised.');
     }
 
-    const globe = new Globe(10.0);
-    globe.addGrid(20);
-    const globeObject = globe.get3dObject();
+    this.globe = new Globe(10.0);
+    this.globe.addGrid(20);
+    const globeObject = this.globe.get3dObject();
     this.state.scene.add(toRaw(globeObject));
     return globeObject;
   }
@@ -69,10 +82,17 @@ export default class OrbitalViewPort extends GeoJsonMixin {
     renderer.setSize(width, height);
     this.$el.appendChild(renderer.domElement);
 
+    // Mouse-up is more meaningful than click in this case - it doesn't matter how much
+    // you move a mouse around inside a viewport, only the end position matters.
+    renderer.domElement.addEventListener('mouseup', this.onMouseUp);
+    renderer.domElement.addEventListener('mousemove', this.onMouseMove);
+
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.5, 1000);
     camera.position.z = -20;
 
     const controls = new OrbitControls(camera, renderer.domElement);
+
+    const raycaster = new THREE.Raycaster();
 
     this.state = toRaw({
       width,
@@ -81,7 +101,29 @@ export default class OrbitalViewPort extends GeoJsonMixin {
       controls,
       scene,
       renderer,
+      raycaster,
     });
+  }
+
+  public onMouseUp(event: MouseEvent): void {
+    const S = this.state;
+    this.updateMousePosition(event.clientX, event.clientY);
+    S.raycaster.setFromCamera(this.mouseState.position, S.camera);
+
+    const intersects = S.raycaster.intersectObject(this.globe.getSurfaceMesh(), false);
+    if (intersects.length > 0) {
+      const hitPoint = intersects[0].point;
+      const coordinates = this.globe.getSphericalCoordinates(hitPoint);
+    }
+  }
+
+  public onMouseMove(event: MouseEvent): void {
+    this.updateMousePosition(event.clientX, event.clientY);
+  }
+
+  private updateMousePosition(x: number, y: number): void {
+    this.mouseState.position.x = (x / this.state.renderer.domElement.clientWidth) * 2 - 1;
+    this.mouseState.position.y = -(y / this.state.renderer.domElement.clientHeight) * 2 + 1;
   }
 }
 </script>
