@@ -38,28 +38,43 @@ export class CoordinateConversion {
 export default class Globe {
   constructor(public readonly radius: number) {}
 
-  private mesh: THREE.Mesh | null = null;
+  private presentationMesh: THREE.Mesh | null = null;
+
+  private surfaceMesh: THREE.Mesh | null = null;
 
   private planet: THREE.Object3D | null = null;
 
-  public getMesh(): THREE.Mesh {
-    if (this.mesh == null) {
-      const geometry = new THREE.SphereGeometry(this.radius, 10, 10);
-      const translucentMaterial = new THREE.MeshBasicMaterial({
-        color: 0,
-        transparent: true,
-        opacity: 0.7,
-      });
-      this.mesh = new THREE.Mesh(geometry, translucentMaterial);
-    }
+  private createSphericalGeometry(w: number, h: number): THREE.SphereGeometry {
+    return new THREE.SphereGeometry(this.radius, w, h);
+  }
 
-    return this.mesh;
+  private initialisePresentationMesh(): THREE.Mesh {
+    const geometry = this.createSphericalGeometry(10, 10);
+    const translucentMaterial = new THREE.MeshBasicMaterial({
+      color: 0,
+      transparent: true,
+      opacity: 0.7,
+    });
+    this.presentationMesh = new THREE.Mesh(geometry, translucentMaterial);
+    return this.presentationMesh;
+  }
+
+  private initialiseSurfaceMesh(): THREE.Mesh {
+    const geometry = this.createSphericalGeometry(28, 28);
+    const material = new THREE.MeshBasicMaterial({
+      color: 0,
+      transparent: true,
+      opacity: 0,
+    });
+    this.surfaceMesh = new THREE.Mesh(geometry, material);
+    return this.surfaceMesh;
   }
 
   public get3dObject(): THREE.Object3D {
     if (this.planet == null) {
       const planet = new THREE.Object3D();
-      planet.add(this.getMesh());
+      planet.add(this.initialisePresentationMesh());
+      planet.add(this.initialiseSurfaceMesh());
       this.planet = planet;
     }
     return this.planet;
