@@ -5,10 +5,10 @@
 <script lang="ts">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { toRaw } from '@vue/reactivity';
 import Stats from 'three/examples/jsm/libs/stats.module';
 import Globe from '../visualisation/globe';
 import GeoJsonMixin from '../visualisation/geoJson.mixin';
+import throttle from '../utilities/throttle';
 
 interface ViewPortState {
   width: number;
@@ -25,6 +25,8 @@ interface IMouseState {
 }
 
 export default class OrbitalViewPort extends GeoJsonMixin {
+  private readonly mouseEventThrottlingDelayMs = 100;
+
   // This is a reactive version that's messing with rendering framerate.
   // state: ViewPortState | null = null;
   state!: ViewPortState;
@@ -54,7 +56,7 @@ export default class OrbitalViewPort extends GeoJsonMixin {
     this.stats.begin();
     const S = this.state;
     S.controls.update();
-    S.renderer.render(toRaw(S.scene), S.camera);
+    S.renderer.render(S.scene, S.camera);
     this.stats.end();
 
     window.requestAnimationFrame(this.animate);
@@ -68,7 +70,7 @@ export default class OrbitalViewPort extends GeoJsonMixin {
     this.globe = new Globe(10.0);
     this.globe.addGrid(20);
     const globeObject = this.globe.get3dObject();
-    this.state.scene.add(toRaw(globeObject));
+    this.state.scene.add(globeObject);
     return globeObject;
   }
 
@@ -82,10 +84,7 @@ export default class OrbitalViewPort extends GeoJsonMixin {
     renderer.setSize(width, height);
     this.$el.appendChild(renderer.domElement);
 
-    // Mouse-up is more meaningful than click in this case - it doesn't matter how much
-    // you move a mouse around inside a viewport, only the end position matters.
-    renderer.domElement.addEventListener('mouseup', this.onMouseUp);
-    renderer.domElement.addEventListener('mousemove', this.onMouseMove);
+    this.initialiseMouseEvents(renderer.domElement);
 
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.5, 1000);
     camera.position.z = -20;
@@ -95,7 +94,7 @@ export default class OrbitalViewPort extends GeoJsonMixin {
 
     const raycaster = new THREE.Raycaster();
 
-    this.state = toRaw({
+    this.state = {
       width,
       height,
       camera,
@@ -103,7 +102,16 @@ export default class OrbitalViewPort extends GeoJsonMixin {
       scene,
       renderer,
       raycaster,
-    });
+    };
+  }
+
+  private initialiseMouseEvents(rendererElement: HTMLCanvasElement): void {
+    const delay = this.mouseEventThrottlingDelayMs;
+
+    // Mouse-up is more meaningful than click in this case - it doesn't matter how much
+    // you move a mouse around inside a viewport, only the end position matters.
+    rendererElement.addEventListener('mouseup', this.onMouseUp);
+    rendererElement.addEventListener('mousemove', throttle(this.onMouseMove, delay));
   }
 
   public onMouseUp(event: MouseEvent): void {
