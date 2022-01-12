@@ -1,5 +1,5 @@
 <template>
-  <div class="viewport"></div>
+  <div class="orbital-viewport"></div>
 </template>
 
 <script lang="ts">
@@ -18,16 +18,18 @@ interface ViewPortState {
   renderer: THREE.Renderer;
 }
 
-export default class ViewPort extends GeoJsonMixin {
-  // state: ViewPortState | null = null;  // this is a reactive version that's messing with rendering framerate.
+export default class OrbitalViewPort extends GeoJsonMixin {
+  // This is a reactive version that's messing with rendering framerate.
+  // state: ViewPortState | null = null;
   state!: ViewPortState;
+
+  globeObject!: THREE.Object3D;
 
   mounted(): void {
     this.initialiseViewPort();
-    this.$nextTick(() => {
-      this.animate();
-      return this.initialiseGlobe();
-    });
+    this.animate();
+    this.globeObject = this.initialiseGlobe();
+    this.populateWithGeoJsonData(10, 'sphere', this.globeObject);
   }
 
   private animate(): void {
@@ -42,18 +44,16 @@ export default class ViewPort extends GeoJsonMixin {
     window.requestAnimationFrame(this.animate);
   }
 
-  private async initialiseGlobe(): Promise<void> {
+  private initialiseGlobe(): THREE.Object3D {
     if (this.state == null) {
-      console.error('Failed to initialise globe: Viewport state not initialised.');
-      return;
+      throw new Error('Failed to initialise globe: Viewport state not initialised.');
     }
 
     const globe = new Globe(10.0);
     globe.addGrid(20);
     const globeObject = globe.get3dObject();
     this.state.scene.add(toRaw(globeObject));
-
-    await this.populateWithGeoJsonData(10, 'sphere', globeObject);
+    return globeObject;
   }
 
   private initialiseViewPort(): void {

@@ -1,14 +1,14 @@
 <template>
-  <ViewPort />
+  <OrbitalViewPort />
 </template>
 
 <script lang="ts">
 import { Options, Vue } from 'vue-class-component';
-import ViewPort from './components/ViewPort.vue';
+import OrbitalViewPort from './components/OrbitalViewPort.vue';
 
 @Options({
   components: {
-    ViewPort,
+    OrbitalViewPort,
   },
 })
 export default class App extends Vue {}
